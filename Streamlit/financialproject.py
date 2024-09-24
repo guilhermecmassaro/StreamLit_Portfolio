@@ -82,7 +82,11 @@ with secondline_col1:
         numbers_invested_input = st.number_input(label = 'Amount invested', min_value = 0.0, step = 100.0, value = 1000.0)
         ir_toggle = st.toggle("IR Mode")
         inflation_toggle = st.toggle("Inflation Mode")
-        st.form_submit_button(label = 'Submit', on_click=simulation_calculator_ir(asset_df=df_filtered,investment=numbers_invested_input))
+        forms_button_function = simulation_calculator(asset_df=df_filtered,investment=numbers_invested_input)
+        if ir_toggle:
+            forms_button_function = simulation_calculator_ir(asset_df=df_filtered,investment=numbers_invested_input)
+
+        st.form_submit_button(label = 'Submit', on_click= forms_button_function)
 
 with secondline_col2:
     # Download do CSV filtrado

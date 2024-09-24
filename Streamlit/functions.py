@@ -34,12 +34,10 @@ def simulation_calculator_ir(asset_df, investment):
                                  'Gross Profit': gross_profit, 
                                  'Interest rate': f'{interest_rate} %',
                                  'Net Profit': f'{net_profit}'},
-                                 index=[0], columns = ['Simulator'])
-    st.dataframe(df_simulator.T)
-    #st.write(f'Average Return: {average_log_return*100:.2f} %')
-    #st.write(f'Gross Profit: {final_number:.2f}')
-    #st.write(f'Interest rate: {ir*100:.2f} %')
-    #st.write(f'Net Profit: {(final_number - initial_number) * (1 -ir):.2f}')
+                                 index=[0])
+    df_simulator = df_simulator.T
+    df_simulator.columns = ['Simulator']
+    st.dataframe(df_simulator)
 
 def simulation_calculator(asset_df, investment):
     initial_number = investment
@@ -54,11 +52,10 @@ def simulation_calculator(asset_df, investment):
                                  'Average Return': f'{average_return} %', 
                                  'Gross Revenue' : final_number,
                                  'Gross Profit': gross_profit}, 
-                                 index=[0], columns= 'Simulator')
-    st.dataframe(df_simulator.T)
-    #st.write(f'Average Return: {average_log_return*100:.2f} %')
-    #st.write(f'Gross Revenue: {final_number:.2f}')
-    #st.write(f'Gross Profit: {(final_number - initial_number):.2f}')
+                                 index=[0])
+    df_simulator = df_simulator.T
+    df_simulator.columns = ['Simulator']
+    st.dataframe(df_simulator)
 # Função para carregar os dados do ativo e armazenar no st.session_state
 def load_data(asset_filter):
     asset = FinancialData(asset_filter)
