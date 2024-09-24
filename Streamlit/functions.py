@@ -37,7 +37,7 @@ def simulation_calculator_ir(asset_df, investment):
                                  index=[0])
     df_simulator = df_simulator.T
     df_simulator.columns = ['Simulator']
-    st.dataframe(df_simulator)
+    return df_simulator
 
 def simulation_calculator(asset_df, investment):
     initial_number = investment
@@ -55,7 +55,8 @@ def simulation_calculator(asset_df, investment):
                                  index=[0])
     df_simulator = df_simulator.T
     df_simulator.columns = ['Simulator']
-    st.dataframe(df_simulator)
+    return df_simulator
+
 # Função para carregar os dados do ativo e armazenar no st.session_state
 def load_data(asset_filter):
     asset = FinancialData(asset_filter)

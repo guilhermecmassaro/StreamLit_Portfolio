@@ -68,31 +68,65 @@ with firstline_col3:
     st.write(f'### Normalized evolution of {asset_filter}')
     st.line_chart(data = df_filtered, x = 'Date', y = 'Normalized Adj Close', width = 1000, height = 300)
 
-# Gráfico de Log Return
-st.write(f'### Daily logarithmic returns of {asset_filter}')
-st.bar_chart(data = df_filtered, x = 'Date', y = 'Log Return', width = 1000, height = 500)
+secondline_col1 = st.columns([1], gap="large",vertical_alignment="top")
 
-secondline_col1, secondline_col2 = st.columns([1,2], gap="large",vertical_alignment="top")
+with secondline_col1[0]:
 
-with secondline_col1:
-    # Forms de simulação
-    st.write(f'### Simulation from {min_date.date()} to {max_date.date()} of {asset_filter}')
-    forms = st.form(key = 'simulation_form', clear_on_submit = False)
-    with forms:
-        numbers_invested_input = st.number_input(label = 'Amount invested', min_value = 0.0, step = 100.0, value = 1000.0)
+    # Sample DataFrame (df_filtered should already exist in your case)
+    df_filtered['Color'] = df_filtered['Log Return'].apply(lambda x: 'green' if x > 0 else 'red')
+
+    # Define the Altair chart
+    log_return_chart = (
+        alt.Chart(df_filtered)
+        .mark_bar()
+        .encode(
+            x='Date:T',  # 'Date:T' ensures it's treated as a temporal field
+            y='Log Return:Q',
+            color=alt.condition(
+                alt.datum['Log Return'] > 0,  # condition for positive values
+                alt.value('green'),           # color for positive values
+                alt.value('red')              # color for negative values
+            )
+        )
+        .properties(width=1000, height=500)
+    )
+
+    # Display the Altair chart in Streamlit
+    st.write(f'### Daily logarithmic returns of {asset_filter}')
+    st.altair_chart(log_return_chart, use_container_width=True)
+
+thirdline_col1, thirdline_col2 = st.columns([1,2], gap="large",vertical_alignment="top")
+
+with thirdline_col1:
+    st.write(f'### Simulation from {min_date_input.date()} to {max_date_input.date()} of {asset_filter}')
+
+    # Create the form
+    with st.form(key='simulation_form', clear_on_submit=False):
+
+        # Inputs inside the form
+        numbers_invested_input = st.number_input(label='Amount invested', min_value=0.0, step=100.0, value=1000.0)
         ir_toggle = st.toggle("IR Mode")
-        inflation_toggle = st.toggle("Inflation Mode")
-        forms_button_function = simulation_calculator(asset_df=df_filtered,investment=numbers_invested_input)
-        if ir_toggle:
-            forms_button_function = simulation_calculator_ir(asset_df=df_filtered,investment=numbers_invested_input)
+        # inflation_toggle = st.toggle("Inflation Mode")
+        
+        # Submit button
+        submit_button = st.form_submit_button(label='Submit')
 
-        st.form_submit_button(label = 'Submit', on_click= forms_button_function)
+        # Execute only when the form is submitted
+        if submit_button:
+            if ir_toggle:
+                # Replace the dataframe with the one from IR Mode
+                df_to_display = st.dataframe(simulation_calculator_ir(asset_df=df_filtered, investment=numbers_invested_input), use_container_width=True)
+            else:
+                # Normal dataframe without IR mode
+                df_to_display = st.dataframe(simulation_calculator(asset_df=df_filtered, investment=numbers_invested_input), use_container_width=True)
 
-with secondline_col2:
+with thirdline_col2:
     # Download do CSV filtrado
     st.write('### Feel Free to export the data as CSV')
+    df_filtered['Date'] = df_filtered['Date'].apply(lambda x: x.date())
+    df_filtered.drop(columns = ['Color'], axis = 1, inplace = True)
     st.download_button('Download CSV', df_filtered.to_csv(), 'data.csv', 'text/csv', key='download-csv')
-    st.dataframe(df_filtered)
+    st.dataframe(df_filtered, use_container_width=True,hide_index= True)
 
 
 
