@@ -6,13 +6,15 @@ from datetime import datetime, timedelta
 
 st.set_page_config(layout="wide")
 firstline_col1, firstline_col2, firstline_col3 = st.columns([1,2,2], gap="large",vertical_alignment="top")
+secondline_col1, secondline_col2 = st.columns([1.2,3], gap="large",vertical_alignment="top")
+thirdline_col1, thirdline_col2 = st.columns([1,2], gap="large",vertical_alignment="top")
+
+# Lista de opções de ativos
+assets_options = ['PETR4.SA', 'ITUB4.SA', 'BBDC4.SA']
 
 with firstline_col1:
 
     col1, col2 = st.columns(2, gap="medium",vertical_alignment="top")
-
-    # Lista de opções de ativos
-    assets_options = ['PETR4.SA', 'ITUB4.SA', 'BBDC4.SA']
 
     # Filtro de seleção do ativo
     with col1:
@@ -60,17 +62,25 @@ df_filtered['Normalized Adj Close'] = df_filtered['Adj Close']/first_line # Cria
 
 with firstline_col2:
     # Gráfico de Adj Close
-    st.write(f'### Data historical of {asset_filter}')
+    st.write(f'### Data Historical ({asset_filter})')
     st.line_chart(data = df_filtered, x = 'Date', y = 'Adj Close',width = 1000, height = 300)
 
 with firstline_col3:
     # Gráfico de Normalization Adj Close
-    st.write(f'### Normalized evolution of {asset_filter}')
+    st.write(f'### Normalized Evolution ({asset_filter})')
     st.line_chart(data = df_filtered, x = 'Date', y = 'Normalized Adj Close', width = 1000, height = 300)
 
-secondline_col1 = st.columns([1], gap="large",vertical_alignment="top")
+with secondline_col1:
+    
+    st.write(f'### Quick Statistical Analysis ({asset_filter})')
+    asset_std = standard_deviation_calculator(asset_df=df_filtered)
+    st.dataframe({'Average Return': f'{average_log_return_calculator(asset_df=df_filtered).round(2)*100} %',
+                'Standard Deviation (σ)' : f'{asset_std.round(2)*100} %',
+                  'Beta': '',
+                  'Sharpe Ration': ''},
+                    use_container_width=True)
 
-with secondline_col1[0]:
+with secondline_col2:
 
     # Sample DataFrame (df_filtered should already exist in your case)
     df_filtered['Color'] = df_filtered['Log Return'].apply(lambda x: 'green' if x > 0 else 'red')
@@ -92,13 +102,11 @@ with secondline_col1[0]:
     )
 
     # Display the Altair chart in Streamlit
-    st.write(f'### Daily logarithmic returns of {asset_filter}')
+    st.write(f'### Daily Logarithmic Returns ({asset_filter})')
     st.altair_chart(log_return_chart, use_container_width=True)
 
-thirdline_col1, thirdline_col2 = st.columns([1,2], gap="large",vertical_alignment="top")
-
 with thirdline_col1:
-    st.write(f'### Simulation from {min_date_input.date()} to {max_date_input.date()} of {asset_filter}')
+    st.write(f'### Simulation From {min_date_input.date()} to {max_date_input.date()} ({asset_filter})')
 
     # Create the form
     with st.form(key='simulation_form', clear_on_submit=False):

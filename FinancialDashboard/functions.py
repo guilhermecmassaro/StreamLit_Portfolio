@@ -14,13 +14,24 @@ class FinancialData:
         data = yf.download(ticker)
         data ['Log Return'] = np.log(data['Adj Close']/(data['Adj Close']).shift(1)) # Criando uma coluna de retorno logarítmico diário
         data['Asset'] = self.ticker # Adicionando uma coluna para o nome do ativo
-        return data
+        return data    
     
-def simulation_calculator_ir(asset_df, investment):
-    initial_number = investment
+# Função para carregar os dados do ativo e armazenar no st.session_state
+def load_data(asset_filter):
+    asset = FinancialData(asset_filter)
+    df_asset = asset.get_historical_data().reset_index().round(3)
+    df_asset['Date'] = pd.to_datetime(df_asset['Date'])
+    st.session_state[asset_filter] = df_asset  # Armazena o dataframe no session_state 
+
+def average_log_return_calculator(asset_df):
     total_days_of_open_market = asset_df['Date'].count()
     daily_average_log_return = asset_df['Log Return'].mean()
     average_log_return = total_days_of_open_market * daily_average_log_return
+    return average_log_return
+
+def simulation_calculator_ir(asset_df, investment):
+    initial_number = investment
+    average_log_return = average_log_return_calculator(asset_df)
     final_number = (initial_number * (1 + average_log_return)).round(2)
     ir = 0.15
     average_return = (average_log_return * 100).round(2)
@@ -41,9 +52,7 @@ def simulation_calculator_ir(asset_df, investment):
 
 def simulation_calculator(asset_df, investment):
     initial_number = investment
-    total_days_of_open_market = asset_df['Date'].count()
-    daily_average_log_return = asset_df['Log Return'].mean()
-    average_log_return = total_days_of_open_market * daily_average_log_return
+    average_log_return = average_log_return_calculator(asset_df)
     final_number = (initial_number * (1 + average_log_return)).round(2)
     average_return = (average_log_return * 100).round(2)
     gross_profit = (final_number - initial_number).round(2)
@@ -56,11 +65,7 @@ def simulation_calculator(asset_df, investment):
     df_simulator = df_simulator.T
     df_simulator.columns = ['Simulator']
     return df_simulator
-
-# Função para carregar os dados do ativo e armazenar no st.session_state
-def load_data(asset_filter):
-    asset = FinancialData(asset_filter)
-    df_asset = asset.get_historical_data().reset_index().round(3)
-    df_asset['Date'] = pd.to_datetime(df_asset['Date'])
-    st.session_state[asset_filter] = df_asset  # Armazena o dataframe no session_state
     
+def standard_deviation_calculator(asset_df):
+    return asset_df['Log Return'].std()
+
