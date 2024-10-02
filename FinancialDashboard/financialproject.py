@@ -50,44 +50,50 @@ with firstline_col1:
         st.link_button("LinkedIn", url = linkedin_link, type = 'primary')
 
 # Verifica se os dados do ativo já estão armazenados no session_state
+if 'IBOV' not in st.session_state:
+    load_data(asset_filter='^BVSP')  # Código do Ibovespa para yfinance
+
 if asset_filter not in st.session_state:
     load_data(asset_filter=asset_filter)  # Faz o download dos dados apenas se não existirem
 
 # Filtra os dados de acordo com o intervalo de datas selecionado
-df_filtered = st.session_state[asset_filter][(st.session_state[asset_filter]['Date'] >= min_date_input) & (st.session_state[asset_filter]['Date'] <= max_date_input)]
-df_filtered = df_filtered.reset_index(drop=True) # Ignorando o indice
+df_asset_filtered = st.session_state[asset_filter][(st.session_state[asset_filter]['Date'] >= min_date_input) & (st.session_state[asset_filter]['Date'] <= max_date_input)]
+df_asset_filtered = df_asset_filtered.reset_index(drop=True) # Ignorando o indice
 
-first_line = df_filtered['Adj Close'].iloc[0] # Criando uma variável para a primeira linha da tabela
-df_filtered['Normalized Adj Close'] = df_filtered['Adj Close']/first_line # Criando uma coluna normalizada para acompanhar a evolução
+df_market = st.session_state['^BVSP'][(st.session_state['^BVSP']['Date'] >= min_date_input) & (st.session_state['^BVSP']['Date'] <= max_date_input)]
+df_market = df_market.reset_index(drop=True)
+
+first_line = df_asset_filtered['Adj Close'].iloc[0] # Criando uma variável para a primeira linha da tabela
+df_asset_filtered['Normalized Adj Close'] = df_asset_filtered['Adj Close']/first_line # Criando uma coluna normalizada para acompanhar a evolução
 
 with firstline_col2:
     # Gráfico de Adj Close
     st.write(f'### Data Historical ({asset_filter})')
-    st.line_chart(data = df_filtered, x = 'Date', y = 'Adj Close',width = 1000, height = 300)
+    st.line_chart(data = df_asset_filtered, x = 'Date', y = 'Adj Close',width = 1000, height = 300)
 
 with firstline_col3:
     # Gráfico de Normalization Adj Close
     st.write(f'### Normalized Evolution ({asset_filter})')
-    st.line_chart(data = df_filtered, x = 'Date', y = 'Normalized Adj Close', width = 1000, height = 300)
+    st.line_chart(data = df_asset_filtered, x = 'Date', y = 'Normalized Adj Close', width = 1000, height = 300)
 
 with secondline_col1:
     
     st.write(f'### Quick Statistical Analysis ({asset_filter})')
-    asset_std = standard_deviation_calculator(asset_df=df_filtered)
-    st.dataframe({'Average Return': f'{average_log_return_calculator(asset_df=df_filtered).round(2)*100} %',
+    asset_std = standard_deviation_calculator(asset_df=df_asset_filtered)
+    st.dataframe({'Average Return': f'{average_log_return_calculator(asset_df=df_asset_filtered).round(2)*100} %',
                 'Standard Deviation (σ)' : f'{asset_std.round(2)*100} %',
-                  'Beta': '',
-                  'Sharpe Ration': ''},
+                  'Beta': beta_calculator(asset_df=df_asset_filtered, market_df=df_market),
+                  'Sharpe Ration': sharpe_ratio_calculator(asset_df=df_asset_filtered, risk_free_rate=0.125)},
                     use_container_width=True)
 
 with secondline_col2:
 
-    # Sample DataFrame (df_filtered should already exist in your case)
-    df_filtered['Color'] = df_filtered['Log Return'].apply(lambda x: 'green' if x > 0 else 'red')
+    # Sample DataFrame (df_asset_filtered should already exist in your case)
+    df_asset_filtered['Color'] = df_asset_filtered['Log Return'].apply(lambda x: 'green' if x > 0 else 'red')
 
     # Define the Altair chart
     log_return_chart = (
-        alt.Chart(df_filtered)
+        alt.Chart(df_asset_filtered)
         .mark_bar()
         .encode(
             x='Date:T',  # 'Date:T' ensures it's treated as a temporal field
@@ -123,18 +129,18 @@ with thirdline_col1:
         if submit_button:
             if ir_toggle:
                 # Replace the dataframe with the one from IR Mode
-                df_to_display = st.dataframe(simulation_calculator_ir(asset_df=df_filtered, investment=numbers_invested_input), use_container_width=True)
+                df_to_display = st.dataframe(simulation_calculator_ir(asset_df=df_asset_filtered, investment=numbers_invested_input), use_container_width=True)
             else:
                 # Normal dataframe without IR mode
-                df_to_display = st.dataframe(simulation_calculator(asset_df=df_filtered, investment=numbers_invested_input), use_container_width=True)
+                df_to_display = st.dataframe(simulation_calculator(asset_df=df_asset_filtered, investment=numbers_invested_input), use_container_width=True)
 
 with thirdline_col2:
     # Download do CSV filtrado
     st.write('### Feel Free to export the data as CSV')
-    df_filtered['Date'] = df_filtered['Date'].apply(lambda x: x.date())
-    df_filtered.drop(columns = ['Color'], axis = 1, inplace = True)
-    st.download_button('Download CSV', df_filtered.to_csv(), 'data.csv', 'text/csv', key='download-csv')
-    st.dataframe(df_filtered, use_container_width=True,hide_index= True)
+    df_asset_filtered['Date'] = df_asset_filtered['Date'].apply(lambda x: x.date())
+    df_asset_filtered.drop(columns = ['Color'], axis = 1, inplace = True)
+    st.download_button('Download CSV', df_asset_filtered.to_csv(), 'data.csv', 'text/csv', key='download-csv')
+    st.dataframe(df_asset_filtered, use_container_width=True,hide_index= True)
 
 
 
