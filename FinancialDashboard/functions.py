@@ -66,12 +66,6 @@ def simulation_calculator(asset_df, investment):
     df_simulator.columns = ['Simulator']
     return df_simulator
     
-def standard_deviation_calculator(asset_df):
-    total_days_of_open_market = asset_df['Date'].count()
-    daily_average_log_std= asset_df['Log Return'].std()
-    std_deviation = total_days_of_open_market * daily_average_log_std
-    return std_deviation
-
 def beta_calculator(asset_df, market_df):
     # Cálculo da covariância entre os retornos do ativo e do índice
     covariance = np.cov(asset_df['Log Return'][1:], market_df['Log Return'][1:])[0, 1]

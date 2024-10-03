@@ -18,7 +18,7 @@ with firstline_col1:
 
     # Filtro de seleção do ativo
     with col1:
-        asset_filter = st.radio("Pick a Asset!", options=assets_options, key='asset')
+        asset_filter = st.selectbox("Pick a Asset!", options=assets_options, key='asset')
         st.write(f"You selected: {asset_filter}")
 
     with col2:
@@ -82,32 +82,107 @@ with firstline_col3:
 with secondline_col1:
     
     st.write(f'### Quick Statistical Analysis ({asset_filter})')
+    st.download_button('Download CSV', df_asset_filtered_grouped.T.to_csv(), f'{asset_filter}_monthly_statisticals.csv', 'text/csv', key='monthlydata-download-csv')
     st.dataframe(df_asset_filtered_grouped.T, use_container_width=True)
+    st.write(f'### Try on the graph on the side')
+    col1,col2, col3, col4 = st.columns([1,1,1,1], gap="small",vertical_alignment="center")
+    with col1:
+        button_daily_return_graph = st.button('Daily R.',type='primary' ,key='button-daily-return')
+    with col2: 
+        button_monthly_return_graph = st.button('Monthly R.',type = 'primary' ,key='button-monthly-return')
+    with col3:
+        button_adjclose_graph = st.button('Adj Close', type = 'primary',key='button-adj-close')
+    with col4:
+        button_nothing_graph = st.button('Nothing',type = 'primary' ,key='nothing')
+
 
 with secondline_col2:
 
-    # Sample DataFrame (df_asset_filtered should already exist in your case)
-    df_asset_filtered['Color'] = df_asset_filtered['Log Return'].apply(lambda x: 'green' if x > 0 else 'red')
+    if button_daily_return_graph:
+        # Sample DataFrame (df_asset_filtered should already exist in your case)
+        df_asset_filtered['Color'] = df_asset_filtered['Log Return'].apply(lambda x: 'green' if x > 0 else 'red')
 
-    # Define the Altair chart
-    log_return_chart = (
-        alt.Chart(df_asset_filtered)
-        .mark_bar()
-        .encode(
-            x='Date:T',  # 'Date:T' ensures it's treated as a temporal field
-            y='Log Return:Q',
-            color=alt.condition(
-                alt.datum['Log Return'] > 0,  # condition for positive values
-                alt.value('green'),           # color for positive values
-                alt.value('red')              # color for negative values
+        # Define the Altair chart
+        log_return_chart = (
+            alt.Chart(df_asset_filtered)
+            .mark_bar()
+            .encode(
+                x='Date:T',  # 'Date:T' ensures it's treated as a temporal field
+                y='Log Return:Q',
+                color=alt.condition(
+                    alt.datum['Log Return'] > 0,  # condition for positive values
+                    alt.value('green'),           # color for positive values
+                    alt.value('red')              # color for negative values
+                )
             )
+            .properties(width=1000, height=500)
         )
-        .properties(width=1000, height=500)
-    )
 
-    # Display the Altair chart in Streamlit
-    st.write(f'### Daily Logarithmic Returns ({asset_filter})')
-    st.altair_chart(log_return_chart, use_container_width=True)
+        # Display the Altair chart in Streamlit
+        st.write(f'### Daily Logarithmic Returns ({asset_filter})')
+        st.altair_chart(log_return_chart, use_container_width=True)
+
+    elif button_monthly_return_graph:
+        # Sample DataFrame (df_asset_filtered should already exist in your case)
+        df_asset_filtered['Color'] = df_asset_filtered['Log Return'].apply(lambda x: 'green' if x > 0 else 'red')
+
+        # Define the Altair chart
+        log_return_chart = (
+            alt.Chart(df_asset_filtered_grouped)
+            .mark_line()
+            .encode(
+                x='Month/Year',  # 'Date:T' ensures it's treated as a temporal field
+                y='Log Return:Q',
+            )
+            .properties(width=1000, height=500)
+        )
+
+        # Display the Altair chart in Streamlit
+        st.write(f'### Monthly Logarithmic Returns ({asset_filter})')
+        st.altair_chart(log_return_chart, use_container_width=True)
+
+    elif button_adjclose_graph:
+        # Sample DataFrame (df_asset_filtered should already exist in your case)
+        df_asset_filtered['Color'] = df_asset_filtered['Log Return'].apply(lambda x: 'green' if x > 0 else 'red')
+
+        # Define the Altair chart
+        log_return_chart = (
+            alt.Chart(df_asset_filtered)
+            .mark_bar()
+            .encode(
+                x='Date:T',  # 'Date:T' ensures it's treated as a temporal field
+                y='Adj Close:Q',
+            )
+            .properties(width=1000, height=500)
+        )
+
+        # Display the Altair chart in Streamlit
+        st.write(f'### Adj Close ({asset_filter})')
+        st.altair_chart(log_return_chart, use_container_width=True)
+    
+    else:
+        # Sample DataFrame (df_asset_filtered should already exist in your case)
+        df_asset_filtered['Color'] = df_asset_filtered['Log Return'].apply(lambda x: 'green' if x > 0 else 'red')
+
+        # Define the Altair chart
+        log_return_chart = (
+            alt.Chart(df_asset_filtered)
+            .mark_bar()
+            .encode(
+                x='Date:T',  # 'Date:T' ensures it's treated as a temporal field
+                y='Log Return:Q',
+                color=alt.condition(
+                    alt.datum['Log Return'] > 0,  # condition for positive values
+                    alt.value('green'),           # color for positive values
+                    alt.value('red')              # color for negative values
+                )
+            )
+            .properties(width=1000, height=500)
+        )
+
+        # Display the Altair chart in Streamlit
+        st.write(f'### Daily Logarithmic Returns ({asset_filter})')
+        st.altair_chart(log_return_chart, use_container_width=True)
 
 with thirdline_col1:
     st.write(f'### Simulation From {min_date_input.date()} to {max_date_input.date()} ({asset_filter})')
@@ -141,7 +216,7 @@ with thirdline_col2:
     st.write('### Feel Free to export the data as CSV')
     df_asset_filtered['Date'] = df_asset_filtered['Date'].apply(lambda x: x.date())
     df_asset_filtered.drop(columns = ['Color'], axis = 1, inplace = True)
-    st.download_button('Download CSV', df_asset_filtered.to_csv(), 'data.csv', 'text/csv', key='download-csv')
+    st.download_button('Download CSV', df_asset_filtered.to_csv(), f'{asset_filter}_data.csv', 'text/csv', key='alldata-download-csv')
     st.dataframe(df_asset_filtered, use_container_width=True,hide_index= True)
 
 
