@@ -81,7 +81,6 @@ def beta_calculator(asset_df, market_df):
     beta = (covariance / variance_market).round(3)
     return beta
 
-
 def sharpe_ratio_calculator(asset_df, risk_free_rate):
     # Cálculo da média do retorno logarítmico
     mean_return = asset_df['Log Return'].mean()
@@ -91,5 +90,23 @@ def sharpe_ratio_calculator(asset_df, risk_free_rate):
     sharpe_ratio = ((mean_return - risk_free_rate) / std_deviation).round(3)
     return sharpe_ratio
 
+def df_groupby_monthly(asset_df):
+    df = asset_df
+    df['Year'] = df['Date'].apply(lambda x: x.year)
+    df['Month'] = df['Date'].apply(lambda x: x.month)
+    df['Month/Year'] = df['Date'].apply(lambda x: x.strftime('%m/%Y'))
+    df = df[['Month/Year','Year','Month','Asset', 'Log Return','Adj Close']]
+    df_grouped = df.groupby(['Month/Year','Year', 'Month','Asset']).agg({'Log Return': ['sum','std'], 'Adj Close': ['min','max','mean']}).reset_index()
+    df_grouped.set_index('Month/Year', inplace=True)
+    df_grouped = df_grouped.sort_values(by=['Year','Month'], ascending=True)
+    df_grouped = df_grouped[['Log Return','Adj Close']]
+    df_grouped.columns = ['Average Return','Average Return Std' ,'Min Adj Close','Max Adj Close','Average Adj Close']   
 
+    df_grouped['Average Return'] = df_grouped['Average Return'].apply(lambda x: f'{(x*100):.2f} %')
+    df_grouped['Average Return Std'] = df_grouped['Average Return Std'].apply(lambda x: f'{(x*100):.2f} %')
+    df_grouped['Average Adj Close'] = df_grouped['Average Adj Close'].round(2)
+    df_grouped['Min Adj Close'] = df_grouped['Min Adj Close'].round(2)
+    df_grouped['Max Adj Close'] = df_grouped['Max Adj Close'].round(2)
+
+    return df_grouped
 

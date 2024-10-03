@@ -59,12 +59,15 @@ if asset_filter not in st.session_state:
 # Filtra os dados de acordo com o intervalo de datas selecionado
 df_asset_filtered = st.session_state[asset_filter][(st.session_state[asset_filter]['Date'] >= min_date_input) & (st.session_state[asset_filter]['Date'] <= max_date_input)]
 df_asset_filtered = df_asset_filtered.reset_index(drop=True) # Ignorando o indice
-
-df_market = st.session_state['^BVSP'][(st.session_state['^BVSP']['Date'] >= min_date_input) & (st.session_state['^BVSP']['Date'] <= max_date_input)]
-df_market = df_market.reset_index(drop=True)
-
 first_line = df_asset_filtered['Adj Close'].iloc[0] # Criando uma variável para a primeira linha da tabela
 df_asset_filtered['Normalized Adj Close'] = df_asset_filtered['Adj Close']/first_line # Criando uma coluna normalizada para acompanhar a evolução
+
+df_market_filtered = st.session_state['^BVSP'][(st.session_state['^BVSP']['Date'] >= min_date_input) & (st.session_state['^BVSP']['Date'] <= max_date_input)]
+df_market_filtered = df_market_filtered.reset_index(drop=True)
+
+df_asset_filtered_grouped = df_groupby_monthly(df_asset_filtered)
+df_market_filtered_grouped = df_groupby_monthly(df_market_filtered)
+
 
 with firstline_col2:
     # Gráfico de Adj Close
@@ -79,12 +82,7 @@ with firstline_col3:
 with secondline_col1:
     
     st.write(f'### Quick Statistical Analysis ({asset_filter})')
-    asset_std = standard_deviation_calculator(asset_df=df_asset_filtered)
-    st.dataframe({'Average Return': f'{average_log_return_calculator(asset_df=df_asset_filtered).round(2)*100} %',
-                'Standard Deviation (σ)' : f'{asset_std.round(2)*100} %',
-                  'Beta': beta_calculator(asset_df=df_asset_filtered, market_df=df_market),
-                  'Sharpe Ration': sharpe_ratio_calculator(asset_df=df_asset_filtered, risk_free_rate=0.125)},
-                    use_container_width=True)
+    st.dataframe(df_asset_filtered_grouped.T, use_container_width=True)
 
 with secondline_col2:
 
@@ -113,14 +111,18 @@ with secondline_col2:
 
 with thirdline_col1:
     st.write(f'### Simulation From {min_date_input.date()} to {max_date_input.date()} ({asset_filter})')
-
+            
     # Create the form
     with st.form(key='simulation_form', clear_on_submit=False):
+
+        with st.expander('Read me first!'):
+            st.write('''This is a quick and simple simulation!
+                     We don\'t take into account inflation, contributions and dividends. 
+                     Please, check your results carefully!''')
 
         # Inputs inside the form
         numbers_invested_input = st.number_input(label='Amount invested', min_value=0.0, step=100.0, value=1000.0)
         ir_toggle = st.toggle("IR Mode")
-        # inflation_toggle = st.toggle("Inflation Mode")
         
         # Submit button
         submit_button = st.form_submit_button(label='Submit')
