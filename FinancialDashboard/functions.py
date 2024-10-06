@@ -12,9 +12,18 @@ class FinancialData:
     def get_historical_data(self):
         ticker = self.ticker
         data = yf.download(ticker)
-        data ['Log Return'] = np.log(data['Adj Close']/(data['Adj Close']).shift(1)) # Criando uma coluna de retorno logarítmico diário
+        # data ['Log Return'] = np.log(data['Adj Close']/(data['Adj Close']).shift(1)) # Criando uma coluna de retorno logarítmico diário
+        data['Log Return'] = data['Adj Close'].pct_change()
         data['Asset'] = self.ticker # Adicionando uma coluna para o nome do ativo
-        return data    
+        return data
+
+    def market_capitalization(self, df_asset):
+        ticker = self.ticker
+        marketCap = df_asset['Adj Close'][-1] * yf.Ticker(ticker).info['sharesOutstanding']      
+
+    def price_to_earnings_ratio(self, df_asset):
+        ticker = self.ticker
+        peRatio = df_asset['Adj Close'][-1] / yf.Ticker(ticker).info['epsTrailingTwelveMonths'] 
     
 # Função para carregar os dados do ativo e armazenar no st.session_state
 def load_data(asset_filter):
